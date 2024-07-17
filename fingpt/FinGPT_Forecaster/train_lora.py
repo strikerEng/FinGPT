@@ -124,7 +124,8 @@ def main(args):
     formatted_time = current_time.strftime('%Y%m%d%H%M')
     
     training_args = TrainingArguments(
-        output_dir=f'finetuned_models/{args.run_name}_{formatted_time}', # 保存位置
+        # storage location of the pretrained model
+        output_dir=f'finetuned_models/{args.run_name}_{formatted_time}', 
         logging_steps=args.log_interval,
         num_train_epochs=args.num_epochs,
         per_device_train_batch_size=args.batch_size,

@@ -15,8 +15,17 @@ def get_company_prompt(symbol):
     
     profile = finnhub_client.company_profile2(symbol=symbol)
 
-    company_template = "[Company Introduction]:\n\n{name} is a leading entity in the {finnhubIndustry} sector. Incorporated and publicly traded since {ipo}, the company has established its reputation as one of the key players in the market. As of today, {name} has a market capitalization of {marketCapitalization:.2f} in {currency}, with {shareOutstanding:.2f} shares outstanding." \
-        "\n\n{name} operates primarily in the {country}, trading under the ticker {ticker} on the {exchange}. As a dominant force in the {finnhubIndustry} space, the company continues to innovate and drive progress within the industry."
+    company_template = """
+        [Company Introduction]:\n\n{name} is a leading entity in the 
+        {finnhubIndustry} sector. Incorporated and publicly traded since {ipo}, 
+        the company has established its reputation as one of the key players in 
+        the market. As of today, {name} has a market capitalization of 
+        {marketCapitalization:.2f} in {currency}, with {shareOutstanding:.2f} 
+        shares outstanding. \n\n{name} operates primarily in the {country}, 
+        trading under the ticker {ticker} on the {exchange}. As a dominant force 
+        in the {finnhubIndustry} space, the company continues to innovate and 
+        drive progress within the industry.
+    """
 
     formatted_str = company_template.format(**profile)
     
@@ -27,7 +36,10 @@ def get_crypto_prompt(symbol):
 
     profile = yf.Ticker(symbol).info
 
-    crpyto_template = """[Cryptocurrency Introduction]: {description}. It has a market capilization of {marketCap}."""
+    crpyto_template = """
+        [Cryptocurrency Introduction]: {description}.
+        It has a market capilization of {marketCap}.
+    """
     
     formatted_str = crpyto_template.format(**profile)
     
@@ -39,8 +51,11 @@ def get_prompt_by_row(symbol, row):
     start_date = row['Start Date'] if isinstance(row['Start Date'], str) else row['Start Date'].strftime('%Y-%m-%d')
     end_date = row['End Date'] if isinstance(row['End Date'], str) else row['End Date'].strftime('%Y-%m-%d')
     term = 'increased' if row['End Price'] > row['Start Price'] else 'decreased'
-    head = "From {} to {}, {}'s stock price {} from {:.2f} to {:.2f}. News during this period are listed below:\n\n".format(
-        start_date, end_date, symbol, term, row['Start Price'], row['End Price'])
+    head = f"""
+        From { start_date } to { end_date }, { symbol }'s stock price { term } 
+        from {row['Start Price']:.2f} to {row['End Price']:.2f}. News during 
+        this period are listed below:\n\n.
+    """
     
     news = json.loads(row["News"])
     news = ["[Headline]: {}\n[Summary]: {}\n".format(
@@ -49,8 +64,11 @@ def get_prompt_by_row(symbol, row):
 
     basics = json.loads(row['Basics'])
     if basics:
-        basics = "Some recent basic financials of {}, reported at {}, are presented below:\n\n[Basic Financials]:\n\n".format(
-            symbol, basics['period']) + "\n".join(f"{k}: {v}" for k, v in basics.items() if k != 'period')
+        basics = f"""
+            Some recent basic financials of {symbol}, reported at 
+            {basics['period']}, are presented below:\n\n[Basic Financials]:
+            \n\n""\n
+        """.join(f"{k}: {v}" for k, v in basics.items() if k != 'period')
     else:
         basics = "[Basic Financials]:\n\nNo basic financial reported."
     
@@ -62,8 +80,11 @@ def get_crypto_prompt_by_row(symbol, row):
     start_date = row['Start Date'] if isinstance(row['Start Date'], str) else row['Start Date'].strftime('%Y-%m-%d')
     end_date = row['End Date'] if isinstance(row['End Date'], str) else row['End Date'].strftime('%Y-%m-%d')
     term = 'increased' if row['End Price'] > row['Start Price'] else 'decreased'
-    head = "From {} to {}, {}'s stock price {} from {:.2f} to {:.2f}. News during this period are listed below:\n\n".format(
-        start_date, end_date, symbol, term, row['Start Price'], row['End Price'])
+    head = f"""
+        From {start_date} to {end_date}, {symbol}'s stock price {term} from 
+        {row['Start Price']:.2f} to {row['End Price']:.2f}. News during this 
+        period are listed below:\n\n
+    """
     
     news = json.loads(row["News"])
     news = ["[Headline]: {}\n[Summary]: {}\n".format(
@@ -95,11 +116,27 @@ def map_bin_label(bin_lb):
     return lb
 
 PROMPT_END = {
-    "company": "\n\nBased on all the information before {start_date}, let's first analyze the positive developments and potential concerns for {symbol}. Come up with 2-4 most important factors respectively and keep them concise. Most factors should be inferred from company related news. " \
-        "Then let's assume your prediction for next week ({start_date} to {end_date}) is {prediction}. Provide a summary analysis to support your prediction. The prediction result need to be inferred from your analysis at the end, and thus not appearing as a foundational factor of your analysis.",
+    "company": """\n\n
+    Based on all the information before {start_date}, let's 
+    first analyze the positive developments and potential concerns for {symbol}.
+    Come up with 2-4 most important factors respectively and keep them concise.
+    Most factors should be inferred from company related news. Then let's assume 
+    your prediction for next week ({start_date} to {end_date}) is {prediction}. 
+    Provide a summary analysis to support your prediction. The prediction result
+    need to be inferred from your analysis at the end, and thus not appearing 
+    as a foundational factor of your analysis.
+    """,
 
-    "crypto": "\n\nBased on all the information before {start_date}, let's first analyze the positive developments and potential concerns for {symbol}. Come up with 2-4 most important factors respectively and keep them concise. Most factors should be inferred from cryptocurrencies related news. " \
-        "Then let's assume your prediction for next week ({start_date} to {end_date}) is {prediction}. Provide a summary analysis to support your prediction. The prediction result need to be inferred from your analysis at the end, and thus not appearing as a foundational factor of your analysis."
+    "crypto": """\n\n
+    Based on all the information before {start_date}, let's first analyze the 
+    positive developments and potential concerns for {symbol}. Come up with 2-4
+    most important factors respectively and keep them concise. Most factors 
+    should be inferred from cryptocurrencies related news. Then let's assume 
+    your prediction for next week ({start_date} to {end_date}) is {prediction}. 
+    Provide a summary analysis to support your prediction. The prediction result
+    need to be inferred from your analysis at the end, and thus not appearing 
+    as a foundational factor of your analysis.
+    """
 }
 
 def get_all_prompts(symbol, data_dir, start_date, end_date, min_past_weeks=1, max_past_weeks=3, with_basics=True):

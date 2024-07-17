@@ -18,6 +18,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer
 access_token = os.environ["HF_TOKEN"]
 finnhub_client = finnhub.Client(api_key=os.environ["FINNHUB_API_KEY"])
 
+# TODO: Use Llama3 and other open source LLMs 
 base_model = AutoModelForCausalLM.from_pretrained(
     'meta-llama/Llama-2-7b-chat-hf',
     token=access_token,
@@ -43,8 +44,16 @@ streamer = TextStreamer(tokenizer)
 B_INST, E_INST = "[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
-SYSTEM_PROMPT = "You are a seasoned stock market analyst. Your task is to list the positive developments and potential concerns for companies based on relevant news and basic financials from the past weeks, then provide an analysis and prediction for the companies' stock price movement for the upcoming week. " \
-    "Your answer format should be as follows:\n\n[Positive Developments]:\n1. ...\n\n[Potential Concerns]:\n1. ...\n\n[Prediction & Analysis]\nPrediction: ...\nAnalysis: ..."
+# TODO: Try out different system prompts 
+SYSTEM_PROMPT = """
+    You are a seasoned stock market analyst. Your task is to list the positive 
+    developments and potential concerns for companies based on relevant news and
+     basic financials from the past weeks, then provide an analysis and 
+     prediction for the companies' stock price movement for the upcoming week. "
+    "Your answer format should be as follows:\n\n[Positive Developments]:\n1. 
+    ...\n\n[Potential Concerns]:\n1. ...\n\n[Prediction & Analysis]\nPrediction:
+     ...\nAnalysis: ...
+"""
 
 
 def print_gpu_utilization():
@@ -127,8 +136,16 @@ def get_company_prompt(symbol):
     if not profile:
         raise gr.Error(f"Failed to find company profile for symbol {symbol} from finnhub!")
         
-    company_template = "[Company Introduction]:\n\n{name} is a leading entity in the {finnhubIndustry} sector. Incorporated and publicly traded since {ipo}, the company has established its reputation as one of the key players in the market. As of today, {name} has a market capitalization of {marketCapitalization:.2f} in {currency}, with {shareOutstanding:.2f} shares outstanding." \
-        "\n\n{name} operates primarily in the {country}, trading under the ticker {ticker} on the {exchange}. As a dominant force in the {finnhubIndustry} space, the company continues to innovate and drive progress within the industry."
+    company_template = """[Company Introduction]:\n\n{name} is a leading entity 
+    in the {finnhubIndustry} sector. Incorporated and publicly traded since 
+    {ipo}, the company has established its reputation as one of the key players 
+    in the market. As of today, {name} has a market capitalization of 
+    {marketCapitalization:.2f} in {currency}, with {shareOutstanding:.2f} shares 
+    outstanding." \ "\n\n{name} operates primarily in the {country}, trading 
+    under the ticker {ticker} on the {exchange}. As a dominant force in the 
+    {finnhubIndustry} space, the company continues to innovate and drive 
+    progress within the industry.
+"""
 
     formatted_str = company_template.format(**profile)
     
@@ -214,14 +231,22 @@ def get_all_prompts_online(symbol, data, curday, with_basics=True):
     
     if with_basics:
         basics = get_current_basics(symbol, curday)
-        basics = "Some recent basic financials of {}, reported at {}, are presented below:\n\n[Basic Financials]:\n\n".format(
-            symbol, basics['period']) + "\n".join(f"{k}: {v}" for k, v in basics.items() if k != 'period')
+        basics = f"""Some recent basic financials of {symbol}, reported at 
+        {basics['period']}, are presented below:\n\n[Basic Financials]:\n\n
+        """ + "\n".join(f"{k}: {v}" for k, v in basics.items() if k != 'period')
+        
     else:
         basics = "[Basic Financials]:\n\nNo basic financial reported."
 
     info = company_prompt + '\n' + prompt + '\n' + basics
-    prompt = info + f"\n\nBased on all the information before {curday}, let's first analyze the positive developments and potential concerns for {symbol}. Come up with 2-4 most important factors respectively and keep them concise. Most factors should be inferred from company related news. " \
-        f"Then make your prediction of the {symbol} stock price movement for next week ({period}). Provide a summary analysis to support your prediction."
+    prompt = info + f"""
+        \n\nBased on all the information before {curday}, let's first analyze 
+        the positive developments and potential concerns for {symbol}. Come up 
+        with 2-4 most important factors respectively and keep them concise. Most 
+        factors should be inferred from company related news. Then make your 
+        prediction of the {symbol} stock price movement for next week ({period}). 
+        Provide a summary analysis to support your prediction.
+    """
         
     return info, prompt
 
@@ -308,12 +333,21 @@ demo = gr.Interface(
         )
     ],
     title="FinGPT-Forecaster",
-    description="""FinGPT-Forecaster takes random market news and optional basic financials related to the specified company from the past few weeks as input and responds with the company's **positive developments** and **potential concerns**. Then it gives out a **prediction** of stock price movement for the coming week and its **analysis** summary.
-This model is finetuned on Llama2-7b-chat-hf with LoRA on the past year's DOW30 market data. Inference in this demo uses fp16 and **welcomes any ticker symbol**.
-Company profile & Market news & Basic financials & Stock prices are retrieved using **yfinance & finnhub**.
-This is just a demo showing what this model is capable of. Results inferred from randomly chosen news can be strongly biased.
-For more detailed and customized implementation, refer to our FinGPT project: <https://github.com/AI4Finance-Foundation/FinGPT>
-**Disclaimer: Nothing herein is financial advice, and NOT a recommendation to trade real money. Please use common sense and always first consult a professional before trading or investing.**
+    description="""FinGPT-Forecaster takes random market news and optional basic 
+    financials related to the specified company from the past few weeks as input 
+    and responds with the company's **positive developments** and **potential 
+    concerns**. Then it gives out a **prediction** of stock price movement for 
+    the coming week and its **analysis** summary. This model is finetuned on 
+    Llama2-7b-chat-hf with LoRA on the past year's DOW30 market data. Inference
+    in this demo uses fp16 and **welcomes any ticker symbol**. Company profile 
+    & Market news & Basic financials & Stock prices are retrieved using 
+    **yfinance & finnhub**. This is just a demo showing what this model is 
+    capable of. Results inferred from randomly chosen news can be strongly 
+    biased. For more detailed and customized implementation, refer to our 
+    FinGPT project: <https://github.com/AI4Finance-Foundation/FinGPT> 
+    **Disclaimer: Nothing herein is financial advice, and NOT a recommendation 
+    to trade real money. Please use common sense and always first consult a 
+    professional before trading or investing.**
 """
 )
 

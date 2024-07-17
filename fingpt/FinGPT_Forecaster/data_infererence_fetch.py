@@ -10,6 +10,7 @@ from prompt import get_company_prompt, get_prompt_by_row, sample_news
 
 finnhub_client = finnhub.Client(api_key=os.environ.get("FINNHUB_KEY"))
 
+#TODO: Create one file with prompt constants so they can be reused
 
 def get_curday():
     
@@ -107,13 +108,20 @@ def get_all_prompts_online(symbol, data, curday, with_basics=True):
     
     if with_basics:
         basics = get_current_basics(symbol, curday)
-        basics = "Some recent basic financials of {}, reported at {}, are presented below:\n\n[Basic Financials]:\n\n".format(
-            symbol, basics['period']) + "\n".join(f"{k}: {v}" for k, v in basics.items() if k != 'period')
+        basics = f"""Some recent basic financials of {symbol}, reported at 
+        {basics['period']}, are presented below:\n\n[Basic Financials]:\n\n
+        """ + "\n".join(f"{k}: {v}" for k, v in basics.items() if k != 'period')
     else:
         basics = "[Basic Financials]:\n\nNo basic financial reported."
 
     info = company_prompt + '\n' + prompt + '\n' + basics
-    prompt = info + f"\n\nBased on all the information before {curday}, let's first analyze the positive developments and potential concerns for {symbol}. Come up with 2-4 most important factors respectively and keep them concise. Most factors should be inferred from company related news. " \
-        f"Then make your prediction of the {symbol} stock price movement for next week ({period}). Provide a summary analysis to support your prediction."
+    prompt = info + f"""
+        \n\nBased on all the information before {curday}, let's first analyze 
+        the positive developments and potential concerns for {symbol}. Come up 
+        with 2-4 most important factors respectively and keep them concise. Most 
+        factors should be inferred from company related news. Then make your 
+        prediction of the {symbol} stock price movement for next week ({period}). 
+        Provide a summary analysis to support your prediction.
+    """
         
     return info, prompt

@@ -200,11 +200,22 @@ B_INST, E_INST = "[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
 SYSTEM_PROMPTS = {
-    "company": "You are a seasoned stock market analyst. Your task is to list the positive developments and potential concerns for companies based on relevant news and basic financials from the past weeks, then provide an analysis and prediction for the companies' stock price movement for the upcoming week. " \
-    "Your answer format should be as follows:\n\n[Positive Developments]:\n1. ...\n\n[Potential Concerns]:\n1. ...\n\n[Prediction & Analysis]:\n...\n",
+    "company": """You are a seasoned stock market analyst. Your task is to list 
+    the positive developments and potential concerns for companies based on 
+    relevant news and basic financials from the past weeks, then provide an 
+    analysis and prediction for the companies' stock price movement for the 
+    upcoming week. Your answer format should be as follows:
+    \n\n[Positive Developments]:\n1. ...\n\n[Potential Concerns]:\n1. ...
+    \n\n[Prediction & Analysis]:\n...\n"
+    """,
 
-    "crypto": "You are a seasoned crypto market analyst. Your task is to list the positive developments and potential concerns for cryptocurrencies based on relevant news and basic financials from the past weeks, then provide an analysis and prediction for the cryptocurrencies price movement for the upcoming week. " \
-    "Your answer format should be as follows:\n\n[Positive Developments]:\n1. ...\n\n[Potential Concerns]:\n1. ...\n\n[Prediction & Analysis]:\n...\n",
+    "crypto": """You are a seasoned crypto market analyst. Your task is to list 
+    the positive developments and potential concerns for cryptocurrencies based 
+    on relevant news and basic financials from the past weeks, then provide an 
+    analysis and prediction for the cryptocurrencies price movement for the 
+    upcoming week. Your answer format should be as follows:\n\n
+    [Positive Developments]:\n1. ...\n\n[Potential Concerns]:\n1. ...\n\n
+    [Prediction & Analysis]:\n...\n"""
 }
 
 def gpt4_to_llama(symbol, data_dir, start_date, end_date, with_basics=True):
@@ -237,9 +248,9 @@ def gpt4_to_llama(symbol, data_dir, start_date, end_date, with_basics=True):
                 answer
             )
         except Exception:
-            print(symbol, i)
-            print(label)
-            print(answer)
+            print(f"Symbol: {symbol}: Row {i}")
+            print(f"Label: {label}")
+            print(f"Answer: {answer}")
             continue
             
         system_prompt = SYSTEM_PROMPTS["crypto"] if symbol in CRYPTO else SYSTEM_PROMPTS["company"]
@@ -277,6 +288,7 @@ def create_dataset(symbol_list, data_dir, start_date, end_date, train_ratio=0.8,
         dataset = Dataset.from_dict(data_dict)
         train_size = round(train_ratio * len(dataset))
 
+        # TODO: Explore dataset shuffling to split data
         train_dataset_list.append(dataset.select(range(train_size)))
         if train_size >= len(dataset):
             continue

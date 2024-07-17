@@ -1,3 +1,5 @@
+# TODO: S&P 500 Index
+
 DOW_30 = [
     "AXP", "AMGN", "AAPL", "BA", "CAT", "CSCO", "CVX", "GS", "HD", "HON",
     "IBM", "INTC", "JNJ", "KO", "JPM", "MCD", "MMM", "MRK", "MSFT", "NKE",
